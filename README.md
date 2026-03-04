@@ -28,5 +28,6 @@ python beatfnaf1.py
 Now just open FiveNightsatFreddys.exe and after a while it should start automatically moving the mouse and clicking to control the game. The program may break if you attempt to interfere with it while it's running.
 
 To quit the program: Press `esc` to close the game, then press `ctrl + c` in the console to terminate the script.
+NOTE: To (possibly) make it run faster, it doesn't detect when the game closes. So be aware that when you close the game, the mouse may still move around and click on things.
 
 The program will quit automatically if 3 stars are detected on the menu.
