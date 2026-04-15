@@ -310,26 +310,28 @@ def gameLoop():
         if onTitle and not inOffice:
             # Detect how many stars there are
             stars = detectStars()
-            match stars:
-                case 0:
-                    moveMouse(coordinates["continue"])
-                case 1:
-                    moveMouse(coordinates["sixthNight"])
-                case 2:
-                    moveMouse(coordinates["customNight"])
-                    # Set the mode to 20/20/20/20
-                    clickMouse()
-                    time.sleep(3.0)
-                    for i in range(4):
-                        moveMouse(coordinates[["freddyArrow","bonnieArrow","chicaArrow","foxyArrow"][i]])
-                        for _ in range([19, 17, 17, 19][i]):
-                            time.sleep(1.0)
-                            clickMouse()
-                    moveMouse(coordinates["ready"])
-                case 3:
-                    os._exit(1)
+            
+            key = {0: "continue", 1: "sixthNight", 2: "customNight"}.get(stars)
+            
+            if stars == 3:
+                os._exit(1)
+            if key:
+                moveMouse(coordinates[key])
+            
             clickMouse()
             time.sleep(1.0)
+            
+            if stars == 2:
+                # Set the mode to 20/20/20/20
+                time.sleep(3.0)
+                for i in range(4):
+                    moveMouse(coordinates[["freddyArrow","bonnieArrow","chicaArrow","foxyArrow"][i]])
+                    for _ in range([19, 17, 17, 19][i]):
+                        time.sleep(1.0)
+                        clickMouse()
+                moveMouse(coordinates["ready"])
+                clickMouse()
+            
             onTitle = False
 
         if inOffice:
