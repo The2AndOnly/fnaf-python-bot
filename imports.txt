@@ -1,0 +1,4 @@
+pyautogui
+psutil
+pillow
+# run pip install -r imports.txt to install all at once
