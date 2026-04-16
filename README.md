@@ -1,22 +1,22 @@
+# FNAF Python Bot
+
 This program can complete Fnaf 1 and unlock 3 stars without user input. Even if a night is failed, it will attempt it again. Please note that this wasn't made with the intention of being a cheat to unlock everything. (You can easily do that by editing the save file.)
 
 This program was made and tested on Windows 11 using Python version 3.14.3
 
-Required modules:
+## Required modules:
 - pyautogui
 - pillow (for pyautogui)
 - psutil (For detecting when the app opens; not needed to beat the game)
 
-How to run:
+## How to run:
 
 First, have Python with pip installed: https://www.python.org/downloads/
 
 Next, install the dependencies:
 
 ```bash
-pip install pyautogui
-pip install pillow
-pip install psutil
+pip install -r requirements.txt
 ```
 
 Finally, run the program:
@@ -31,3 +31,13 @@ To quit the program: Press `esc` to close the game, then press `ctrl + c` in the
 NOTE: To (possibly) make it run faster, it doesn't detect when the game closes. So be aware that when you close the game, the mouse may still move around and click on things.
 
 The program will quit automatically if 3 stars are detected on the menu.
+
+## For Developers using `uv`:
+
+[pyproject.toml](pyproject.toml) is already configured to run the script with `uv`. Use
+
+```bash
+uv sync
+```
+
+to sync your environment.
