@@ -4,14 +4,15 @@ This program can complete Fnaf 1 and unlock 3 stars without user input. Even if 
 
 This program was made and tested on Windows 11 using Python version 3.14.3
 
-## Required modules:
+## Required modules
+
 - pyautogui
 - pillow (for pyautogui)
 - psutil (For detecting when the app opens; not needed to beat the game)
 
-## How to run:
+## How to run
 
-First, have Python with pip installed: https://www.python.org/downloads/
+First, install Python from [python.org](https://www.python.org/downloads/).
 
 Next, install the dependencies:
 
@@ -32,7 +33,7 @@ NOTE: To (possibly) make it run faster, it doesn't detect when the game closes. 
 
 The program will quit automatically if 3 stars are detected on the menu.
 
-## For Developers using `uv`:
+## For Developers using `uv`
 
 [pyproject.toml](pyproject.toml) is already configured to run the script with `uv`. Use
 
