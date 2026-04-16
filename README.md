@@ -11,12 +11,17 @@ How to run:
 
 First, have Python with pip installed: https://www.python.org/downloads/
 
-Next, install the dependencies:
+Next, create a virtual environment and install the dependencies:
 
 ```bash
-pip install pyautogui
-pip install pillow
-pip install psutil
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# Mac/Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
 Finally, run the program:
