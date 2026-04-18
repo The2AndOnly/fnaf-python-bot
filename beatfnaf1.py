@@ -1,6 +1,5 @@
 import pyautogui as pg
 import psutil
-# from pynput import keyboard
 import threading
 import time
 import os
@@ -54,11 +53,11 @@ def customPMC(x=0, y=0, expectedRGBColor=(0, 0, 0), tolerance=0, sample=None):
         raise TypeError('pixelMatchesColor() has updated and no longer accepts a tuple of (x, y) values for the first argument. Pass these arguments as two separate arguments instead: pixelMatchesColor(x, y, rgb) instead of pixelMatchesColor((x, y), rgb)')
 
     pix = pg.pixel(x, y) if sample == None else sample
-    if len(pix) == 3 or len(expectedRGBColor) == 3:  # RGB mode
+    if len(pix) == 3 or len(expectedRGBColor) == 3: # RGB mode
         r, g, b = pix[:3]
         exR, exG, exB = expectedRGBColor[:3]
         return (abs(r - exR) <= tolerance) and (abs(g - exG) <= tolerance) and (abs(b - exB) <= tolerance)
-    elif len(pix) == 4 and len(expectedRGBColor) == 4:  # RGBA mode
+    elif len(pix) == 4 and len(expectedRGBColor) == 4: # RGBA mode
         r, g, b, a = pix
         exR, exG, exB, exA = expectedRGBColor
         return (
@@ -73,27 +72,6 @@ def customPMC(x=0, y=0, expectedRGBColor=(0, 0, 0), tolerance=0, sample=None):
             % (len(pix), len(expectedRGBColor))
         )
 pg.pixelMatchesColor = customPMC
-
-# def onPress(key):
-#     try:
-#         match key.char:
-#             case 'p':
-#                 print(f"{getPosition()[0]}, {getPosition()[1]}")
-#             case 'c':
-#                 screenshot = pg.screenshot()
-#                 width, height = screenshot.size
-#                 print(screenshot.getpixel((int(getPosition()[0] * width), int(getPosition()[1] * height))))
-#             case '1':
-#                 moveMouse(coordinates["ready"])
-#             case '2':
-#                 moveMouse(coordinates["star2"])
-#             case '3':
-#                 moveMouse(coordinates["star3"])
-#     except: pass
-#     try:
-#         if key == keyboard.Key.space:
-#             officeLoop()
-#     except: pass
 
 def toggleButton(button):
     moveMouse(coordinates[button])
@@ -114,24 +92,20 @@ def camera(cam):
 
 # Functions for detecting states
 def isCamUp():
-    global cameraUp
     return cameraUp
-def isFacingRight():
-    global facingRight
-    return facingRight
-def isNotFacingRight():
-    global facingRight
-    return not facingRight
 
+def isFacingRight():
+    return facingRight
+
+def isNotFacingRight():
+    return not facingRight
 
 # Controls the night gameplay
 def officeLoop():
-    global cameraUp
     global robotAtDoor
     global leftDoorClosed
     global rightDoorClosed
     global foxyCheck
-    global timedOut
 
     # Initialize variables
     foxyCheck = 0
@@ -190,8 +164,8 @@ def officeLoop():
         time.sleep(0.01)
 
 def camFlip():
-    global cameraUp
     global foxyCheck
+
     toggleCamera()
     waitUntil(isCamUp, 5.0)
     foxyCheck += 1
@@ -199,6 +173,7 @@ def camFlip():
 
 def lightCheck(light):
     global lightOn
+
     toggleButton(light)
     lightOn = True
     moveMouse((coordinates[light][0] + 0.01, coordinates[light][1]))
@@ -209,6 +184,7 @@ def lightCheck(light):
 def checkFoxy():
     global foxyCheck
     global leftDoorClosed
+
     foxyCheck = 0
     # Open camera and wait for it to open
     toggleCamera()
@@ -233,6 +209,7 @@ def checkFoxy():
 def checkChica():
     global rightDoorClosed
     global robotAtDoor
+
     # Check right light
     lightCheck("rightLight")
 
@@ -286,6 +263,7 @@ def detectStars():
 
 def waitUntil(condition, maxTime):
     global timedOut
+
     timedOut = False
     endTime = time.time() + maxTime
     while not condition():
@@ -297,10 +275,8 @@ def waitUntil(condition, maxTime):
 # This controls the flow of the game
 def gameLoop():
     global onTitle
-    global star1
-    global star2
-    global star3
     global inOffice
+
     # Wait for the title screen
     while True:
         while True:
@@ -341,7 +317,6 @@ def gameLoop():
             time.sleep(1.0)
             inOffice = False
     
-
 # This loop is for checking states of the game and setting variables
 def detectStates():
     global facingRight
@@ -352,6 +327,7 @@ def detectStates():
     global star2
     global star3
     global inOffice
+
     while True:
         # Getting a screenshot instead of calling pixel()
         # Without try it could throw a KeyboardInterrupt error
@@ -422,9 +398,6 @@ def detectStates():
         time.sleep(0.05)
 
 if __name__ == "__main__":
-    # listener = keyboard.Listener(on_press = onPress)
-    # listener.start()
-
     print("Program started! Waiting for game to open...")
 
     # Wait for the game to open before starting anything
