@@ -6,60 +6,67 @@ import os
 
 pg.PAUSE = 0.05
 
-facingRight = False
-cameraUp = False
-lightOn = False
-leftDoorClosed = False
-rightDoorClosed = False
-robotAtDoor = False
-foxyCheck = 0
-onTitle = False
-star1 = False
-star2 = False
-star3 = False
-inOffice = False
-timedOut = False
+is_facing_right = False
+is_camera_up = False
+is_light_on = False
+is_left_door_closed = False
+is_right_door_closed = False
+is_robot_at_door = False
+last_foxy_check = 0
+is_on_title_screen = False
+star_1 = False
+star_2 = False
+star_3 = False
+is_in_office = False
+has_timed_out = False
 
+animatronics = ["freddy", "bonnie", "chica", "foxy"]
 coordinates = {
-    "leftLight" : (0.033854166666666664, 0.6351851851851852),
-    "rightLight" : (0.9598958333333333, 0.6527777777777778),
-    "leftDoor" : (0.05572916666666667, 0.4222222222222222),
-    "rightDoor" : (0.9614583333333333, 0.4444444444444444),
-    "westHall" : (0.7765625, 0.8453703703703703),
-    "hallCorner" : (0.8557291666666667, 0.9009259259259259),
-    "cameraCheck" : (0.9380208333333333, 0.6157407407407407),
-    "chicaCheck" : (0.6697916666666667, 0.5333333333333333),
-    "bonnieCheck1" : (0.38177083333333334, 0.40185185185185185),
-    "bonnieCheck2" : (0.38229166666666664, 0.4666666666666667),
-    "bonnieCheckDoor" : (0.12604166666666666, 0.3574074074074074),
-    "titleCheck" : (0.1375, 0.6),
-    "continue" : (0.21145833333333333, 0.687962962962963),
-    "sixthNight" : (0.20572916666666666, 0.7851851851851852),
-    "customNight" : (0.26614583333333336, 0.8842592592592593),
-    "star1" : (0.15729166666666666, 0.47685185185185186),
-    "star2" : (0.21666666666666667, 0.4759259259259259),
-    "star3" : (0.27291666666666664, 0.4703703703703704),
-    "officeCheck" : (0.09895833333333333, 0.9361111111111111),
-    "freddyArrow" : (0.23385416666666667, 0.687037037037037),
-    "bonnieArrow" : (0.45208333333333334, 0.6861111111111111),
-    "chicaArrow" : (0.6770833333333334, 0.6824074074074075),
-    "foxyArrow" : (0.8958333333333334, 0.687962962962963),
-    "ready" : (0.8901041666666667, 0.9120370370370371)
+    "left_light":        (0.033854166666666664, 0.6351851851851852 ),
+    "right_light":       (0.9598958333333333,   0.6527777777777778 ),
+    "left_door":         (0.05572916666666667,  0.4222222222222222 ),
+    "right_door":        (0.9614583333333333,   0.4444444444444444 ),
+    "west_hall":         (0.7765625,            0.8453703703703703 ),
+    "hall_corner":       (0.8557291666666667,   0.9009259259259259 ),
+    "camera_check":      (0.9380208333333333,   0.6157407407407407 ),
+    "chica_check":       (0.6697916666666667,   0.5333333333333333 ),
+    "bonnie_check_1":    (0.38177083333333334,  0.40185185185185185),
+    "bonnie_check_2":    (0.38229166666666664,  0.4666666666666667 ),
+    "bonnie_check_door": (0.12604166666666666,  0.3574074074074074 ),
+    "title_check":       (0.1375,               0.6                ),
+    "continue":          (0.21145833333333333,  0.687962962962963  ),
+    "sixth_night":       (0.20572916666666666,  0.7851851851851852 ),
+    "custom_night":      (0.26614583333333336,  0.8842592592592593 ),
+    "star_1":            (0.15729166666666666,  0.47685185185185186),
+    "star_2":            (0.21666666666666667,  0.4759259259259259 ),
+    "star_3":            (0.27291666666666664,  0.4703703703703704 ),
+    "office_check":      (0.09895833333333333,  0.9361111111111111 ),
+    "freddy_arrow":      (0.23385416666666667,  0.687037037037037  ),
+    "bonnie_arrow":      (0.45208333333333334,  0.6861111111111111 ),
+    "chica_arrow":       (0.6770833333333334,   0.6824074074074075 ),
+    "foxy_arrow":        (0.8958333333333334,   0.687962962962963  ),
+    "ready":             (0.8901041666666667,   0.9120370370370371 )
+}
+default_animatronic_levels = {
+    "freddy": 1,
+    "bonnie": 3,
+    "chica":  3,
+    "foxy":   1
 }
 
 # Monkey patch for pyautogui's "pixelMatchesColor" function
-def customPMC(x=0, y=0, expectedRGBColor=(0, 0, 0), tolerance=0, sample=None):
+def custom_pixelMatchesColor(x=0, y=0, expected_rgb_color=(0, 0, 0), tolerance=0, sample=None):
     if isinstance(x, pg.collections.abc.Sequence) and len(x) == 2:
         raise TypeError('pixelMatchesColor() has updated and no longer accepts a tuple of (x, y) values for the first argument. Pass these arguments as two separate arguments instead: pixelMatchesColor(x, y, rgb) instead of pixelMatchesColor((x, y), rgb)')
 
-    pix = pg.pixel(x, y) if sample == None else sample
-    if len(pix) == 3 or len(expectedRGBColor) == 3: # RGB mode
-        r, g, b = pix[:3]
-        exR, exG, exB = expectedRGBColor[:3]
+    pixel = pg.pixel(x, y) if sample == None else sample
+    if len(pixel) == 3 or len(expected_rgb_color) == 3: # RGB mode
+        r, g, b = pixel[:3]
+        exR, exG, exB = expected_rgb_color[:3]
         return (abs(r - exR) <= tolerance) and (abs(g - exG) <= tolerance) and (abs(b - exB) <= tolerance)
-    elif len(pix) == 4 and len(expectedRGBColor) == 4: # RGBA mode
-        r, g, b, a = pix
-        exR, exG, exB, exA = expectedRGBColor
+    elif len(pixel) == 4 and len(expected_rgb_color) == 4: # RGBA mode
+        r, g, b, a = pixel
+        exR, exG, exB, exA = expected_rgb_color
         return (
             (abs(r - exR) <= tolerance)
             and (abs(g - exG) <= tolerance)
@@ -68,265 +75,283 @@ def customPMC(x=0, y=0, expectedRGBColor=(0, 0, 0), tolerance=0, sample=None):
         )
     else:
         assert False, (
-            'Color mode was expected to be length 3 (RGB) or 4 (RGBA), but pixel is length %s and expectedRGBColor is length %s'  # noqa
-            % (len(pix), len(expectedRGBColor))
+            f"Color mode was expected to be length 3 (RGB) or 4 (RGBA), but pixel is length {len(pixel)} and expected_rgb_color is length {len(expected_rgb_color)}"
         )
-pg.pixelMatchesColor = customPMC
+pg.pixelMatchesColor = custom_pixelMatchesColor
 
-def toggleButton(button):
-    moveMouse(coordinates[button])
+def toggle_button(button):
+    move_mouse(coordinates[button])
     if "left" in button:
-        waitUntil(isNotFacingRight, 5.0)
+        wait_until(is_not_facing_right, 5)
     if "right" in button:
-        waitUntil(isFacingRight, 5.0)
-    clickMouse()
+        wait_until(is_facing_right, 5)
+    click_mouse()
 
-def toggleCamera():
-    moveMouse((0.43072916666666666, 0.98))
+def toggle_camera():
+    move_mouse((0.43072916666666666, 0.98))
     time.sleep(0.1)
-    moveMouse((0.43072916666666666, 0.85))
+    move_mouse((0.43072916666666666, 0.85))
 
 def camera(cam):
-    moveMouse(coordinates[cam])
-    clickMouse()
+    move_mouse(coordinates[cam])
+    click_mouse()
 
 # Functions for detecting states
-def isCamUp():
-    return cameraUp
+def is_camera_up():
+    return is_camera_up
 
-def isFacingRight():
-    return facingRight
+def is_facing_right():
+    return is_facing_right
 
-def isNotFacingRight():
-    return not facingRight
+def is_not_facing_right():
+    return not is_facing_right
 
 # Controls the night gameplay
 def officeLoop():
-    global robotAtDoor
-    global leftDoorClosed
-    global rightDoorClosed
-    global foxyCheck
+    global is_robot_at_door
+    global is_left_door_closed
+    global is_right_door_closed
+    global last_foxy_check
 
     # Initialize variables
-    foxyCheck = 0
-    leftDoorClosed = False
-    rightDoorClosed = False
+    last_foxy_check = 0
+    is_left_door_closed = False
+    is_right_door_closed = False
 
     # East hall corner at the start of the night
-    toggleCamera()
-    waitUntil(isCamUp, 5.0)
-    if timedOut: return
-    camera("hallCorner")
+    toggle_camera()
+    wait_until(is_camera_up, 5)
+    if has_timed_out:
+        return
+    
+    camera("hall_corner")
     time.sleep(0.01)
-    toggleCamera()
+    toggle_camera()
 
     while True:
         # Check left light
-        lightCheck("leftLight")
-        if timedOut: break
+        check_light("left_light")
+        if has_timed_out:
+            break
 
         # Toggle door accordingly
-        if robotAtDoor and not leftDoorClosed:
-            leftDoorClosed = True
-            toggleButton("leftDoor")
-            if timedOut: break
-        elif leftDoorClosed and not robotAtDoor:
-            leftDoorClosed = False
-            toggleButton("leftDoor")
-            if timedOut: break
-        robotAtDoor = False
+        if is_robot_at_door and not is_left_door_closed:
+            is_left_door_closed = True
+            toggle_button("left_door")
+        elif is_left_door_closed and not is_robot_at_door:
+            is_left_door_closed = False
+            toggle_button("left_door")
+        if has_timed_out:
+            break
+
+        is_robot_at_door = False
 
         # Flip camera
-        camFlip()
-        if timedOut: break
+        flip_camera()
+        if has_timed_out:
+            break
 
         # If haven't checked foxy in a while, then do that instead of checking Chica
-        if foxyCheck >= 50:
-            if not rightDoorClosed:
-                rightDoorClosed = True
-                toggleButton("rightDoor")
-                if timedOut: break
+        if last_foxy_check >= 50:
+            if not is_right_door_closed:
+                is_right_door_closed = True
+
+                toggle_button("right_door")
+                if has_timed_out:
+                    break
             else:
                 time.sleep(0.5)
-            checkFoxy()
-            if timedOut: break
+
+            check_foxy()
+            if has_timed_out:
+                break
         else:
-            checkChica()
+            check_chica()
 
             # Flip camera or check Foxy
-            if foxyCheck >= 40 and rightDoorClosed:
-                checkFoxy()
-                if timedOut: break
+            if last_foxy_check >= 40 and is_right_door_closed:
+                check_foxy()
             else:
-                camFlip()
-                if timedOut: break
+                flip_camera()
+            if has_timed_out:
+                break
 
         time.sleep(0.01)
 
-def camFlip():
-    global foxyCheck
+def flip_camera():
+    global last_foxy_check
 
-    toggleCamera()
-    waitUntil(isCamUp, 5.0)
-    foxyCheck += 1
-    toggleCamera()
+    toggle_camera()
+    wait_until(is_camera_up, 5)
+    last_foxy_check += 1
+    toggle_camera()
 
-def lightCheck(light):
-    global lightOn
+def check_light(light):
+    global is_light_on
 
-    toggleButton(light)
-    lightOn = True
-    moveMouse((coordinates[light][0] + 0.01, coordinates[light][1]))
+    toggle_button(light)
+    is_light_on = True
+    move_mouse((coordinates[light][0] + 0.01, coordinates[light][1]))
     time.sleep(0.15)
-    clickMouse()
-    lightOn = False
+    click_mouse()
+    is_light_on = False
 
-def checkFoxy():
-    global foxyCheck
-    global leftDoorClosed
+def check_foxy():
+    global last_foxy_check
+    global is_left_door_closed
 
-    foxyCheck = 0
+    last_foxy_check = 0
+
     # Open camera and wait for it to open
-    toggleCamera()
-    waitUntil(isCamUp, 5.0)
+    toggle_camera()
+    wait_until(is_camera_up, 5)
+
     # Switch to the west hall briefly to make Foxy run if he's there
-    camera("westHall")
+    camera("west_hall")
     time.sleep(0.05)
-    camera("hallCorner")
+    camera("hall_corner")
     time.sleep(0.05)
+
     # Close the camera
-    toggleCamera()
+    toggle_camera()
+
     # Close the left door
-    if not leftDoorClosed:
-        leftDoorClosed = True
-        toggleButton("leftDoor")
+    if not is_left_door_closed:
+        is_left_door_closed = True
+        toggle_button("left_door")
     else:
         time.sleep(0.5)
-    # Continue game loop starting with checking Chica
-    checkChica()
-    camFlip()
 
-def checkChica():
-    global rightDoorClosed
-    global robotAtDoor
+    # Continue game loop starting with checking Chica
+    check_chica()
+    flip_camera()
+
+def check_chica():
+    global is_right_door_closed
+    global is_robot_at_door
 
     # Check right light
-    lightCheck("rightLight")
+    check_light("right_light")
 
     # Toggle door accordingly
-    if robotAtDoor and not rightDoorClosed:
-        rightDoorClosed = True
-        toggleButton("rightDoor")
-    elif rightDoorClosed and not robotAtDoor:
-        rightDoorClosed = False
-        toggleButton("rightDoor")
-    robotAtDoor = False
+    if is_robot_at_door and not is_right_door_closed:
+        is_right_door_closed = True
+        toggle_button("right_door")
+    elif is_right_door_closed and not is_robot_at_door:
+        is_right_door_closed = False
+        toggle_button("right_door")
+    is_robot_at_door = False
 
-def moveMouse(coords):
+def move_mouse(coords):
     pg.moveTo(
-            coords[0] * pg.size()[0],
-            coords[1] * pg.size()[1]
-        )
+        coords[0] * pg.size()[0],
+        coords[1] * pg.size()[1]
+    )
 
-def clickMouse():
+def click_mouse():
     pg.mouseDown()
     time.sleep(0.02)
     pg.mouseUp()
     time.sleep(0.02)
 
-def getPosition():
+def get_position():
+    position = pg.position()
     width, height = pg.size()
-    return (pg.position().x / width, pg.position().y / height)
+    return (position.x / width, position.y / height)
 
-def getPixel(coords, sc):
+def get_pixel(coords, sc):
     width, height = sc.size
     return sc.getpixel((int(coordinates[coords][0] * width), int(coordinates[coords][1] * height)))
 
-def detectStars():
-    starCheck = 0
+def get_stars():
     for _ in range(10):
-        if star1: starCheck += 1
+        if not star_1:
+            return 0
+        
         time.sleep(0.1)
-    if starCheck == 10:
-        starCheck = 0
-        for _ in range(10):
-            if star2: starCheck += 1
-            time.sleep(0.1)
-        if starCheck == 10:
-            starCheck = 0
-            for _ in range(10):
-                if star3: starCheck += 1
-                time.sleep(0.1)
-            return 3 if starCheck == 10 else 2
-        else: return 1
-    else: return 0
+    
+    for _ in range(10):
+        if not star_2:
+            return 1
+        
+        time.sleep(0.1)
 
-def waitUntil(condition, maxTime):
-    global timedOut
+    for _ in range(10):
+        if not star_3:
+            return 2
+        
+        time.sleep(0.1)
+    
+    return 3
 
-    timedOut = False
-    endTime = time.time() + maxTime
+def wait_until(condition, maxTime):
+    global has_timed_out
+
+    has_timed_out = False
+    end_time = time.time() + maxTime
     while not condition():
-        time.sleep(0.01)
-        if time.time() >= endTime:
-            timedOut = True
+        if time.time() >= end_time:
+            has_timed_out = True
             break
 
+        time.sleep(0.01)
+
 # This controls the flow of the game
-def gameLoop():
-    global onTitle
-    global inOffice
+def game_loop():
+    global is_on_title_screen
+    global is_in_office
 
     # Wait for the title screen
     while True:
         while True:
-            time.sleep(1.0)
-            if onTitle or inOffice: break
+            time.sleep(1)
+            if is_on_title_screen or is_in_office:
+                break
 
-        if onTitle and not inOffice:
+        if is_on_title_screen and not is_in_office:
             # Detect how many stars there are
-            stars = detectStars()
-            
-            key = {0: "continue", 1: "sixthNight", 2: "customNight"}.get(stars)
-            
+            stars = get_stars()
+
             if stars == 3:
                 os._exit(1)
-            if key:
-                moveMouse(coordinates[key])
             
-            clickMouse()
-            time.sleep(1.0)
+            move_mouse(coordinates[["continue", "sixth_night", "custom_night"][stars]])
+            
+            click_mouse()
+            time.sleep(1)
             
             if stars == 2:
                 # Set the mode to 20/20/20/20
-                time.sleep(3.0)
-                for i in range(4):
-                    moveMouse(coordinates[["freddyArrow","bonnieArrow","chicaArrow","foxyArrow"][i]])
-                    for _ in range([19, 17, 17, 19][i]):
-                        time.sleep(1.0)
-                        clickMouse()
-                moveMouse(coordinates["ready"])
-                clickMouse()
-            
-            onTitle = False
+                time.sleep(3)
 
-        if inOffice:
+                for animatronic in animatronics:
+                    move_mouse(coordinates[f"{animatronic}_arrow"])
+                    for _ in range(default_animatronic_levels[animatronic]):
+                        time.sleep(1)
+                        click_mouse()
+
+                move_mouse(coordinates["ready"])
+                click_mouse()
+            
+            is_on_title_screen = False
+
+        if is_in_office:
             # Start office loop after 3 seconds
-            time.sleep(3.0)
+            time.sleep(3)
             officeLoop()
-            time.sleep(1.0)
-            inOffice = False
+            time.sleep(1)
+            is_in_office = False
     
 # This loop is for checking states of the game and setting variables
-def detectStates():
-    global facingRight
-    global robotAtDoor
-    global cameraUp
-    global onTitle
-    global star1
-    global star2
-    global star3
-    global inOffice
+def update_states():
+    global is_facing_right
+    global is_robot_at_door
+    global is_camera_up
+    global is_on_title_screen
+    global star_1
+    global star_2
+    global star_3
+    global is_in_office
 
     while True:
         # Getting a screenshot instead of calling pixel()
@@ -335,65 +360,67 @@ def detectStates():
 
         try:
             screenshot = pg.screenshot()
-        except: pass
+        except:
+            pass
 
         try:
             if screenshot:
                 # If left door button in frame, then facing left
-                pixelCheck = getPixel("leftDoor", screenshot)
-                if pg.pixelMatchesColor(expectedRGBColor=(109, 0, 0), sample=pixelCheck, tolerance=50):
-                    facingRight = False
-                if pg.pixelMatchesColor(expectedRGBColor=(29, 107, 0), sample=pixelCheck, tolerance=80):
-                    facingRight = False
+                pixel_check = get_pixel("left_door", screenshot)
+                if pg.pixelMatchesColor(expected_rgb_color=(109, 0, 0), sample=pixel_check, tolerance=50):
+                    is_facing_right = False
+                if pg.pixelMatchesColor(expected_rgb_color=(29, 107, 0), sample=pixel_check, tolerance=80):
+                    is_facing_right = False
 
                 # If right door button in frame, then facing right
-                pixelCheck = getPixel("rightDoor", screenshot)
-                if pg.pixelMatchesColor(expectedRGBColor=(163, 0, 0), sample=pixelCheck, tolerance=50):
-                    facingRight = True
-                if pg.pixelMatchesColor(expectedRGBColor=(35, 128, 0), sample=pixelCheck, tolerance=80):
-                    facingRight = True
+                pixel_check = get_pixel("right_door", screenshot)
+                if pg.pixelMatchesColor(expected_rgb_color=(163, 0, 0), sample=pixel_check, tolerance=50):
+                    is_facing_right = True
+                if pg.pixelMatchesColor(expected_rgb_color=(35, 128, 0), sample=pixel_check, tolerance=80):
+                    is_facing_right = True
 
                 # If restroom button in frame, then camera is open
-                pixelCheck = getPixel("cameraCheck", screenshot)
-                cameraUp = pg.pixelMatchesColor(expectedRGBColor=(66, 66, 66), sample=pixelCheck, tolerance=2)
+                pixel_check = get_pixel("camera_check", screenshot)
+                is_camera_up = pg.pixelMatchesColor(expected_rgb_color=(66, 66, 66), sample=pixel_check, tolerance=2)
 
                 # Detect animatronics at the door
-                if lightOn:
-                    if facingRight:
-                        pixelCheck = getPixel("chicaCheck", screenshot)
-                        if pg.pixelMatchesColor(expectedRGBColor=(86, 95, 9), sample=pixelCheck, tolerance=20):
-                            robotAtDoor = True
+                if is_light_on:
+                    if is_facing_right:
+                        pixel_check = get_pixel("chica_check", screenshot)
+                        if pg.pixelMatchesColor(expected_rgb_color=(86, 95, 9), sample=pixel_check, tolerance=20):
+                            is_robot_at_door = True
                     else: # Facing left
                         # If door closed, check for Bonnie's shadow
-                        if leftDoorClosed:
-                            bonniePixel1 = getPixel("bonnieCheck1", screenshot)
-                            bonniePixel2 = getPixel("bonnieCheck2", screenshot)
-                            if pg.pixelMatchesColor(expectedRGBColor=(0, 0, 0), sample=bonniePixel1) and\
-                                pg.pixelMatchesColor(expectedRGBColor=(30, 42, 65), sample=bonniePixel2, tolerance=5):
-                                robotAtDoor = True
+                        if is_left_door_closed:
+                            bonniePixel1 = get_pixel("bonnie_check_1", screenshot)
+                            bonniePixel2 = get_pixel("bonnie_check_2", screenshot)
+                            if pg.pixelMatchesColor(expected_rgb_color=(0, 0, 0), sample=bonniePixel1) and\
+                                pg.pixelMatchesColor(expected_rgb_color=(30, 42, 65), sample=bonniePixel2, tolerance=5):
+                                is_robot_at_door = True
                         else:
-                            pixelCheck = getPixel("bonnieCheckDoor", screenshot)
-                            if pg.pixelMatchesColor(expectedRGBColor=(54, 37, 63), sample=pixelCheck, tolerance=10):
-                                robotAtDoor = True
+                            pixel_check = get_pixel("bonnie_check_door", screenshot)
+                            if pg.pixelMatchesColor(expected_rgb_color=(54, 37, 63), sample=pixel_check, tolerance=10):
+                                is_robot_at_door = True
                 
                 # Detect if you're on the title screen
-                pixelCheck = getPixel("titleCheck", screenshot)
-                onTitle = pg.pixelMatchesColor(expectedRGBColor=(255, 255, 255), sample=pixelCheck)
+                pixel_check = get_pixel("title_check", screenshot)
+                is_on_title_screen = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
 
                 # Detect the stars on the menu
-                pixelCheck = getPixel("star1", screenshot)
-                star1 = pg.pixelMatchesColor(expectedRGBColor=(255, 255, 255), sample=pixelCheck)
-                if star1:
-                    pixelCheck = getPixel("star2", screenshot)
-                    star2 = pg.pixelMatchesColor(expectedRGBColor=(255, 255, 255), sample=pixelCheck)
-                if star2:
-                    pixelCheck = getPixel("star3", screenshot)
-                    star3 = pg.pixelMatchesColor(expectedRGBColor=(255, 255, 255), sample=pixelCheck)
+                pixel_check = get_pixel("star_1", screenshot)
+                star_1 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                if star_1:
+                    pixel_check = get_pixel("star_2", screenshot)
+                    star_2 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                if star_2:
+                    pixel_check = get_pixel("star_3", screenshot)
+                    star_3 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
                 
                 # Detect if inside the office
-                pixelCheck = getPixel("officeCheck", screenshot)
-                inOffice = pg.pixelMatchesColor(expectedRGBColor=(35, 235, 31), sample=pixelCheck, tolerance=5)
-        except: pass
+                pixel_check = get_pixel("office_check", screenshot)
+                is_in_office = pg.pixelMatchesColor(expected_rgb_color=(35, 235, 31), sample=pixel_check, tolerance=5)
+        except:
+            pass
 
         time.sleep(0.05)
 
@@ -401,22 +428,22 @@ if __name__ == "__main__":
     print("Program started! Waiting for game to open...")
 
     # Wait for the game to open before starting anything
-    def isRunning(name):
+    def is_running(name):
         for i in psutil.process_iter(["name"]):
             if i.info["name"] == name:
                 return True
         return False
 
     while True:
-        time.sleep(2.0)
-        if isRunning("FiveNightsatFreddys.exe"):
+        time.sleep(2)
+        if is_running("FiveNightsatFreddys.exe"):
             break
 
     # Wait 5 seconds to make sure the game is open in fullscreen
-    time.sleep(5.0)
-    moveMouse((0.6, 0.6))
+    time.sleep(5)
+    move_mouse((0.6, 0.6))
 
-    gameloopProcess = threading.Thread(target=gameLoop)
-    detectProcess = threading.Thread(target=detectStates)
-    gameloopProcess.start()
-    detectProcess.start()
+    game_loop_thread = threading.Thread(target=game_loop)
+    update_states_thread = threading.Thread(target=update_states)
+    game_loop_thread.start()
+    update_states_thread.start()
