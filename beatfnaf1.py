@@ -58,30 +58,20 @@ default_animatronic_levels = {
     "foxy":   1
 }
 
-# Monkey patch for pyautogui's "pixelMatchesColor" function
-def custom_pixelMatchesColor(x=0, y=0, expected_rgb_color=(0, 0, 0), tolerance=0, sample=None):
-    if isinstance(x, pg.collections.abc.Sequence) and len(x) == 2:
-        raise TypeError('pixelMatchesColor() has updated and no longer accepts a tuple of (x, y) values for the first argument. Pass these arguments as two separate arguments instead: pixelMatchesColor(x, y, rgb) instead of pixelMatchesColor((x, y), rgb)')
+def pixel_matches_color(x=0, y=0, expected_color=(0, 0, 0), tolerance=0, sample=None):
+    # note: to convert from tolerances used in the old system (summing the difference in all of the channels) to a tolerance in this system (assuming the differences are spread evenly across channels), you can simply divide by √3
 
     pixel = pg.pixel(x, y) if sample == None else sample
-    if len(pixel) == 3 or len(expected_rgb_color) == 3: # RGB mode
-        r, g, b = pixel[:3]
-        exR, exG, exB = expected_rgb_color[:3]
-        return (abs(r - exR) <= tolerance) and (abs(g - exG) <= tolerance) and (abs(b - exB) <= tolerance)
-    elif len(pixel) == 4 and len(expected_rgb_color) == 4: # RGBA mode
-        r, g, b, a = pixel
-        exR, exG, exB, exA = expected_rgb_color
-        return (
-            (abs(r - exR) <= tolerance)
-            and (abs(g - exG) <= tolerance)
-            and (abs(b - exB) <= tolerance)
-            and (abs(a - exA) <= tolerance)
-        )
-    else:
-        assert False, (
-            f"Color mode was expected to be length 3 (RGB) or 4 (RGBA), but pixel is length {len(pixel)} and expected_rgb_color is length {len(expected_rgb_color)}"
-        )
-pg.pixelMatchesColor = custom_pixelMatchesColor
+
+    pixel_length = len(pixel)
+    expected_color_length = len(expected_color)
+
+    if pixel_length != expected_color_length:
+        assert False, (f"Color size is mismatched; pixel length is {pixel_length} and expected_color_length is {expected_color_length}")
+    if pixel_length != 3 and pixel_length != 4:
+        assert False, (f"Color size is invalid; color size is {pixel_length}, but should be 3 or 4")
+
+    return sum([(pixel[i] - expected_color[i]) ** 2 for i in range(pixel_length)]) < tolerance ** 2
 
 def toggle_button(button):
     move_mouse(button_coordinates[button])
@@ -371,58 +361,57 @@ def update_states():
             if screenshot:
                 # If left door button in frame, then facing left
                 pixel_check = get_pixel("left_door", screenshot)
-                if pg.pixelMatchesColor(expected_rgb_color=(109, 0, 0), sample=pixel_check, tolerance=50):
+                if pixel_matches_color(expected_rgb_color=(109, 0, 0), sample=pixel_check, tolerance=50 / 3 ** 0.5):
                     is_facing_right = False
-                if pg.pixelMatchesColor(expected_rgb_color=(29, 107, 0), sample=pixel_check, tolerance=80):
+                if pixel_matches_color(expected_rgb_color=(29, 107, 0), sample=pixel_check, tolerance=80 / 3 ** 0.5):
                     is_facing_right = False
 
                 # If right door button in frame, then facing right
                 pixel_check = get_pixel("right_door", screenshot)
-                if pg.pixelMatchesColor(expected_rgb_color=(163, 0, 0), sample=pixel_check, tolerance=50):
+                if pixel_matches_color(expected_rgb_color=(163, 0, 0), sample=pixel_check, tolerance=50 / 3 ** 0.5):
                     is_facing_right = True
-                if pg.pixelMatchesColor(expected_rgb_color=(35, 128, 0), sample=pixel_check, tolerance=80):
+                if pixel_matches_color(expected_rgb_color=(35, 128, 0), sample=pixel_check, tolerance=80 / 3 ** 0.5):
                     is_facing_right = True
 
                 # If restroom button in frame, then camera is open
                 pixel_check = get_pixel("camera_check", screenshot)
-                is_camera_up = pg.pixelMatchesColor(expected_rgb_color=(66, 66, 66), sample=pixel_check, tolerance=2)
+                is_camera_up = pixel_matches_color(expected_rgb_color=(66, 66, 66), sample=pixel_check, tolerance=2 / 3 ** 0.5)
 
                 # Detect animatronics at the door
                 if is_light_on:
                     if is_facing_right:
                         pixel_check = get_pixel("chica_check", screenshot)
-                        if pg.pixelMatchesColor(expected_rgb_color=(86, 95, 9), sample=pixel_check, tolerance=20):
+                        if pixel_matches_color(expected_rgb_color=(86, 95, 9), sample=pixel_check, tolerance=20 / 3 ** 0.5):
                             is_robot_at_door = True
                     else: # Facing left
                         # If door closed, check for Bonnie's shadow
                         if is_left_door_closed:
-                            bonniePixel1 = get_pixel("bonnie_check_1", screenshot)
-                            bonniePixel2 = get_pixel("bonnie_check_2", screenshot)
-                            if pg.pixelMatchesColor(expected_rgb_color=(0, 0, 0), sample=bonniePixel1) and\
-                                pg.pixelMatchesColor(expected_rgb_color=(30, 42, 65), sample=bonniePixel2, tolerance=5):
+                            bonnie_pixel_1 = get_pixel("bonnie_check_1", screenshot)
+                            bonnie_pixel_2 = get_pixel("bonnie_check_2", screenshot)
+                            if pixel_matches_color(expected_rgb_color=(0, 0, 0), sample=bonnie_pixel_1) and pixel_matches_color(expected_rgb_color=(30, 42, 65), sample=bonnie_pixel_2, tolerance=5 / 3 ** 0.5):
                                 is_robot_at_door = True
                         else:
                             pixel_check = get_pixel("bonnie_check_door", screenshot)
-                            if pg.pixelMatchesColor(expected_rgb_color=(54, 37, 63), sample=pixel_check, tolerance=10):
+                            if pixel_matches_color(expected_rgb_color=(54, 37, 63), sample=pixel_check, tolerance=10 / 3 ** 0.5):
                                 is_robot_at_door = True
                 
                 # Detect if you're on the title screen
                 pixel_check = get_pixel("title_check", screenshot)
-                is_on_title_screen = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                is_on_title_screen = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
 
                 # Detect the stars on the menu
                 pixel_check = get_pixel("star_1", screenshot)
-                star_1 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                star_1 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
                 if star_1:
                     pixel_check = get_pixel("star_2", screenshot)
-                    star_2 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                    star_2 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
                 if star_2:
                     pixel_check = get_pixel("star_3", screenshot)
-                    star_3 = pg.pixelMatchesColor(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+                    star_3 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
                 
                 # Detect if inside the office
                 pixel_check = get_pixel("office_check", screenshot)
-                is_in_office = pg.pixelMatchesColor(expected_rgb_color=(35, 235, 31), sample=pixel_check, tolerance=5)
+                is_in_office = pixel_matches_color(expected_rgb_color=(35, 235, 31), sample=pixel_check, tolerance=5 / 3 ** 0.5)
         except:
             pass
 
