@@ -21,31 +21,35 @@ is_in_office = False
 has_timed_out = False
 
 animatronics = ["freddy", "bonnie", "chica", "foxy"]
-coordinates = {
-    "left_light":        (0.033854166666666664, 0.6351851851851852 ),
-    "right_light":       (0.9598958333333333,   0.6527777777777778 ),
-    "left_door":         (0.05572916666666667,  0.4222222222222222 ),
-    "right_door":        (0.9614583333333333,   0.4444444444444444 ),
-    "west_hall":         (0.7765625,            0.8453703703703703 ),
-    "hall_corner":       (0.8557291666666667,   0.9009259259259259 ),
-    "camera_check":      (0.9380208333333333,   0.6157407407407407 ),
-    "chica_check":       (0.6697916666666667,   0.5333333333333333 ),
-    "bonnie_check_1":    (0.38177083333333334,  0.40185185185185185),
-    "bonnie_check_2":    (0.38229166666666664,  0.4666666666666667 ),
-    "bonnie_check_door": (0.12604166666666666,  0.3574074074074074 ),
-    "title_check":       (0.1375,               0.6                ),
+button_coordinates = {
     "continue":          (0.21145833333333333,  0.687962962962963  ),
     "sixth_night":       (0.20572916666666666,  0.7851851851851852 ),
     "custom_night":      (0.26614583333333336,  0.8842592592592593 ),
-    "star_1":            (0.15729166666666666,  0.47685185185185186),
-    "star_2":            (0.21666666666666667,  0.4759259259259259 ),
-    "star_3":            (0.27291666666666664,  0.4703703703703704 ),
-    "office_check":      (0.09895833333333333,  0.9361111111111111 ),
     "freddy_arrow":      (0.23385416666666667,  0.687037037037037  ),
     "bonnie_arrow":      (0.45208333333333334,  0.6861111111111111 ),
     "chica_arrow":       (0.6770833333333334,   0.6824074074074075 ),
     "foxy_arrow":        (0.8958333333333334,   0.687962962962963  ),
-    "ready":             (0.8901041666666667,   0.9120370370370371 )
+    "ready":             (0.8901041666666667,   0.9120370370370371 ),
+    "left_light":        (0.033854166666666664, 0.6351851851851852 ),
+    "right_light":       (0.9598958333333333,   0.6527777777777778 ),
+    "open_camera":       (0.43072916666666666,  0.98               ),
+    "close_camera":      (0.43072916666666666,  0.85               ),
+    "west_hall":         (0.7765625,            0.8453703703703703 ),
+    "hall_corner":       (0.8557291666666667,   0.9009259259259259 )
+}
+scan_coordinates = {
+    "title_check":       (0.1375,               0.6                ),
+    "office_check":      (0.09895833333333333,  0.9361111111111111 ),
+    "star_1":            (0.15729166666666666,  0.47685185185185186),
+    "star_2":            (0.21666666666666667,  0.4759259259259259 ),
+    "star_3":            (0.27291666666666664,  0.4703703703703704 ),
+    "left_door":         (0.05572916666666667,  0.4222222222222222 ),
+    "right_door":        (0.9614583333333333,   0.4444444444444444 ),
+    "camera_check":      (0.9380208333333333,   0.6157407407407407 ),
+    "chica_check":       (0.6697916666666667,   0.5333333333333333 ),
+    "bonnie_check_1":    (0.38177083333333334,  0.40185185185185185),
+    "bonnie_check_2":    (0.38229166666666664,  0.4666666666666667 ),
+    "bonnie_check_door": (0.12604166666666666,  0.3574074074074074 )
 }
 default_animatronic_levels = {
     "freddy": 1,
@@ -80,7 +84,7 @@ def custom_pixelMatchesColor(x=0, y=0, expected_rgb_color=(0, 0, 0), tolerance=0
 pg.pixelMatchesColor = custom_pixelMatchesColor
 
 def toggle_button(button):
-    move_mouse(coordinates[button])
+    move_mouse(button_coordinates[button])
     if "left" in button:
         wait_until(is_not_facing_right, 5)
     if "right" in button:
@@ -88,12 +92,12 @@ def toggle_button(button):
     click_mouse()
 
 def toggle_camera():
-    move_mouse((0.43072916666666666, 0.98))
+    move_mouse(button_coordinates["open_camera"])
     time.sleep(0.1)
-    move_mouse((0.43072916666666666, 0.85))
+    move_mouse(button_coordinates["close_camera"])
 
 def camera(cam):
-    move_mouse(coordinates[cam])
+    move_mouse(button_coordinates[cam])
     click_mouse()
 
 # Functions for detecting states
@@ -191,7 +195,7 @@ def check_light(light):
 
     toggle_button(light)
     is_light_on = True
-    move_mouse((coordinates[light][0] + 0.01, coordinates[light][1]))
+    move_mouse((button_coordinates[light][0] + 0.01, button_coordinates[light][1]))
     time.sleep(0.15)
     click_mouse()
     is_light_on = False
@@ -261,7 +265,7 @@ def get_position():
 
 def get_pixel(coords, sc):
     width, height = sc.size
-    return sc.getpixel((int(coordinates[coords][0] * width), int(coordinates[coords][1] * height)))
+    return sc.getpixel((int(scan_coordinates[coords][0] * width), int(scan_coordinates[coords][1] * height)))
 
 def get_stars():
     for _ in range(10):
@@ -315,7 +319,7 @@ def game_loop():
             if stars == 3:
                 os._exit(1)
             
-            move_mouse(coordinates[["continue", "sixth_night", "custom_night"][stars]])
+            move_mouse(button_coordinates[["continue", "sixth_night", "custom_night"][stars]])
             
             click_mouse()
             time.sleep(1)
@@ -325,12 +329,12 @@ def game_loop():
                 time.sleep(3)
 
                 for animatronic in animatronics:
-                    move_mouse(coordinates[f"{animatronic}_arrow"])
+                    move_mouse(button_coordinates[f"{animatronic}_arrow"])
                     for _ in range(default_animatronic_levels[animatronic]):
                         time.sleep(1)
                         click_mouse()
 
-                move_mouse(coordinates["ready"])
+                move_mouse(button_coordinates["ready"])
                 click_mouse()
             
             is_on_title_screen = False
