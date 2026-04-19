@@ -2,11 +2,13 @@ import os
 import threading
 import time
 
+import mouse
+import keyboard
+import mss
 import psutil
-import pyautogui
-import pynput
 
-pyautogui.PAUSE = 0.05
+sct = mss.mss()
+main_monitor = sct.monitors[1]
 
 is_facing_right = False
 is_camera_up = False
@@ -60,20 +62,9 @@ default_animatronic_levels = {
     "foxy":   1
 }
 
-def pixel_matches_color(x=0, y=0, expected_color=(0, 0, 0), tolerance=0, sample=None):
-    # note: to convert from tolerances used in the old system (summing the difference in all of the channels) to a tolerance in this system (assuming the differences are spread evenly across channels), you can simply divide by √3
-
-    pixel = pyautogui.pixel(x, y) if sample == None else sample
-
-    pixel_length = len(pixel)
-    expected_color_length = len(expected_color)
-
-    if pixel_length != expected_color_length:
-        assert False, (f"Color size is mismatched; pixel length is {pixel_length} and expected_color_length is {expected_color_length}")
-    if pixel_length != 3 and pixel_length != 4:
-        assert False, (f"Color size is invalid; color size is {pixel_length}, but should be 3 or 4")
-
-    return sum([(pixel[i] - expected_color[i]) ** 2 for i in range(pixel_length)]) < tolerance ** 2
+def do_colors_match(color_1=(0, 0, 0), color_2=(0, 0, 0), tolerance=0, channels=3):
+    # note: to convert from tolerances used in the old system (summing the difference in all of the channels) to a tolerance in this system (assuming the differences are spread evenly across channels), you can simply divide by √channels
+    return sum([(color_1[i] - color_2[i]) ** 2 for i in range(channels)]) < tolerance ** 2
 
 def toggle_button(button):
     move_mouse(button_coordinates[button])
@@ -103,7 +94,7 @@ def is_not_facing_right():
     return not is_facing_right
 
 # Controls the night gameplay
-def officeLoop():
+def office_loop():
     global is_robot_at_door
     global is_left_door_closed
     global is_right_door_closed
@@ -147,7 +138,7 @@ def officeLoop():
         if has_timed_out:
             break
 
-        # If haven't checked foxy in a while, then do that instead of checking Chica
+        # If haven't checked Foxy in a while, then do that instead of checking Chica
         if last_foxy_check >= 50:
             if not is_right_door_closed:
                 is_right_door_closed = True
@@ -238,26 +229,17 @@ def check_chica():
         toggle_button("right_door")
     is_robot_at_door = False
 
-def move_mouse(coords):
-    pyautogui.moveTo(
-        coords[0] * pyautogui.size()[0],
-        coords[1] * pyautogui.size()[1]
-    )
+def move_mouse(position):
+    mouse.position = (position[0] * sct.monitors[1]["width"], position[1] * sct.monitors[1]["height"])
 
 def click_mouse():
-    pyautogui.mouseDown()
+    mouse.press()
     time.sleep(0.02)
-    pyautogui.mouseUp()
+    mouse.release()
     time.sleep(0.02)
 
-def get_position():
-    position = pyautogui.position()
-    width, height = pyautogui.size()
-    return (position.x / width, position.y / height)
-
-def get_pixel(coords, screenshot):
-    width, height = screenshot.size
-    return screenshot.getpixel((int(scan_coordinates[coords][0] * width), int(scan_coordinates[coords][1] * height)))
+def get_pixel(position, screenshot):
+    return screenshot.pixel([position[0] * main_monitor["width"], position[1] * main_monitor["height"]])
 
 def get_stars():
     for _ in range(10):
@@ -334,7 +316,7 @@ def game_loop():
         if is_in_office:
             # Start office loop after 3 seconds
             time.sleep(3)
-            officeLoop()
+            office_loop()
             time.sleep(1)
             is_in_office = False
     
@@ -350,87 +332,74 @@ def update_states():
     global is_in_office
 
     while True:
-        # Getting a screenshot instead of calling pixel()
-        # Without try it could throw a KeyboardInterrupt error
-        screenshot = None
-
+        screenshot = sct.grab(main_monitor)
         try:
-            screenshot = pyautogui.screenshot()
-        except:
-            pass
+            # If left door button in frame, then facing left
+            pixel_check = get_pixel(scan_coordinates["left_door"], screenshot)
+            if do_colors_match(color_1=(109, 0, 0), color_2=pixel_check, tolerance=50 / 3 ** 0.5):
+                is_facing_right = False
+            if do_colors_match(color_1=(29, 107, 0), color_2=pixel_check, tolerance=80 / 3 ** 0.5):
+                is_facing_right = False
 
-        try:
-            if screenshot:
-                # If left door button in frame, then facing left
-                pixel_check = get_pixel("left_door", screenshot)
-                if pixel_matches_color(expected_rgb_color=(109, 0, 0), sample=pixel_check, tolerance=50 / 3 ** 0.5):
-                    is_facing_right = False
-                if pixel_matches_color(expected_rgb_color=(29, 107, 0), sample=pixel_check, tolerance=80 / 3 ** 0.5):
-                    is_facing_right = False
+            # If right door button in frame, then facing right
+            pixel_check = get_pixel(scan_coordinates["right_door"], screenshot)
+            if do_colors_match(color_1=(163, 0, 0), color_2=pixel_check, tolerance=50 / 3 ** 0.5):
+                is_facing_right = True
+            if do_colors_match(color_1=(35, 128, 0), color_2=pixel_check, tolerance=80 / 3 ** 0.5):
+                is_facing_right = True
 
-                # If right door button in frame, then facing right
-                pixel_check = get_pixel("right_door", screenshot)
-                if pixel_matches_color(expected_rgb_color=(163, 0, 0), sample=pixel_check, tolerance=50 / 3 ** 0.5):
-                    is_facing_right = True
-                if pixel_matches_color(expected_rgb_color=(35, 128, 0), sample=pixel_check, tolerance=80 / 3 ** 0.5):
-                    is_facing_right = True
+            # If restroom button in frame, then camera is open
+            pixel_check = get_pixel(scan_coordinates["camera_check"], screenshot)
+            is_camera_up = do_colors_match(color_1=(66, 66, 66), color_2=pixel_check, tolerance=2 / 3 ** 0.5)
 
-                # If restroom button in frame, then camera is open
-                pixel_check = get_pixel("camera_check", screenshot)
-                is_camera_up = pixel_matches_color(expected_rgb_color=(66, 66, 66), sample=pixel_check, tolerance=2 / 3 ** 0.5)
-
-                # Detect animatronics at the door
-                if is_light_on:
-                    if is_facing_right:
-                        pixel_check = get_pixel("chica_check", screenshot)
-                        if pixel_matches_color(expected_rgb_color=(86, 95, 9), sample=pixel_check, tolerance=20 / 3 ** 0.5):
+            # Detect animatronics at the door
+            if is_light_on:
+                if is_facing_right:
+                    pixel_check = get_pixel(scan_coordinates["chica_check"], screenshot)
+                    if do_colors_match(color_1=(86, 95, 9), color_2=pixel_check, tolerance=20 / 3 ** 0.5):
+                        is_robot_at_door = True
+                else: # Facing left
+                    # If door closed, check for Bonnie's shadow
+                    if is_left_door_closed:
+                        bonnie_pixel_1 = get_pixel(scan_coordinates["bonnie_check_1"], screenshot)
+                        bonnie_pixel_2 = get_pixel(scan_coordinates["bonnie_check_2"], screenshot)
+                        if do_colors_match(color_1=(0, 0, 0), color_2=bonnie_pixel_1) and do_colors_match(color_1=(30, 42, 65), color_2=bonnie_pixel_2, tolerance=5 / 3 ** 0.5):
                             is_robot_at_door = True
-                    else: # Facing left
-                        # If door closed, check for Bonnie's shadow
-                        if is_left_door_closed:
-                            bonnie_pixel_1 = get_pixel("bonnie_check_1", screenshot)
-                            bonnie_pixel_2 = get_pixel("bonnie_check_2", screenshot)
-                            if pixel_matches_color(expected_rgb_color=(0, 0, 0), sample=bonnie_pixel_1) and pixel_matches_color(expected_rgb_color=(30, 42, 65), sample=bonnie_pixel_2, tolerance=5 / 3 ** 0.5):
-                                is_robot_at_door = True
-                        else:
-                            pixel_check = get_pixel("bonnie_check_door", screenshot)
-                            if pixel_matches_color(expected_rgb_color=(54, 37, 63), sample=pixel_check, tolerance=10 / 3 ** 0.5):
-                                is_robot_at_door = True
+                    else:
+                        pixel_check = get_pixel(scan_coordinates["bonnie_check_door"], screenshot)
+                        if do_colors_match(color_1r=(54, 37, 63), color_2=pixel_check, tolerance=10 / 3 ** 0.5):
+                            is_robot_at_door = True
                 
                 # Detect if you're on the title screen
-                pixel_check = get_pixel("title_check", screenshot)
-                is_on_title_screen = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
+            pixel_check = get_pixel(scan_coordinates["title_check"], screenshot)
+            is_on_title_screen = do_colors_match(color_1=(255, 255, 255), color_2=pixel_check)
 
-                # Detect the stars on the menu
-                pixel_check = get_pixel("star_1", screenshot)
-                star_1 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
-                if star_1:
-                    pixel_check = get_pixel("star_2", screenshot)
-                    star_2 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
-                if star_2:
-                    pixel_check = get_pixel("star_3", screenshot)
-                    star_3 = pixel_matches_color(expected_rgb_color=(255, 255, 255), sample=pixel_check)
-                
-                # Detect if inside the office
-                pixel_check = get_pixel("office_check", screenshot)
-                is_in_office = pixel_matches_color(expected_rgb_color=(35, 235, 31), sample=pixel_check, tolerance=5 / 3 ** 0.5)
+            # Detect the stars on the menu
+            pixel_check = get_pixel(scan_coordinates["star_1"], screenshot)
+            star_1 = do_colors_match(color_1=(255, 255, 255), color_2=pixel_check)
+            if star_1:
+                pixel_check = get_pixel(scan_coordinates["star_2"], screenshot)
+                star_2 = do_colors_match(color_1=(255, 255, 255), color_2=pixel_check)
+            if star_2:
+                pixel_check = get_pixel(scan_coordinates["star_3"], screenshot)
+                star_3 = do_colors_match(color_1=(255, 255, 255), color_2=pixel_check)
+            
+            # Detect if inside the office
+            pixel_check = get_pixel(scan_coordinates["office_check"], screenshot)
+            is_in_office = do_colors_match(color_1=(35, 235, 31), color_2=pixel_check, tolerance=5 / 3 ** 0.5)
         except:
             pass
 
         time.sleep(0.05)
 
 if __name__ == "__main__":
-    def on_press(key):
-        if key == pynput.keyboard.Key.esc:
-            os._exit(0)
-
     def is_running(name):
         for i in psutil.process_iter(["name"]):
             if i.info["name"] == name:
                 return True
         return False
     
-    pynput.keyboard.Listener(on_press=on_press).join()
+    keyboard.add_hotkey("esc", lambda: os._exit(0))
     
     print("Program started! Waiting for game to open...")
 
@@ -442,7 +411,6 @@ if __name__ == "__main__":
 
     # Wait 5 seconds to make sure the game is open in fullscreen
     time.sleep(5)
-    # move_mouse((0.6, 0.6))
 
     game_loop_thread = threading.Thread(target=game_loop)
     update_states_thread = threading.Thread(target=update_states)
