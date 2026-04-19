@@ -3,8 +3,8 @@ This program can complete FNAF 1 and unlock 3 stars without user input. Even if 
 This program was made and tested on Windows 11 using Python version 3.14.3
 
 Required modules:
-- mouse
 - keyboard (for adding a hotkey to terminate the script when `esc` is pressed; not necessary to beat the game)
+- mouse
 - mss
 - psutil (for detecting when the app opens; also not necessary to beat the game)
 
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Finally, run the program:
 
 ```bash
-python beatfnaf1.py
+python src/
 ```
 
 Now just open FiveNightsatFreddys.exe, and after a while the script should start automatically moving and clicking the mouse to control the game. The program may break if you attempt to interfere with it while it's running.
