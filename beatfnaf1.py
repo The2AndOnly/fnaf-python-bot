@@ -1,10 +1,12 @@
-import pyautogui as pg
-import psutil
+import os
 import threading
 import time
-import os
 
-pg.PAUSE = 0.05
+import psutil
+import pyautogui
+import pynput
+
+pyautogui.PAUSE = 0.05
 
 is_facing_right = False
 is_camera_up = False
@@ -61,7 +63,7 @@ default_animatronic_levels = {
 def pixel_matches_color(x=0, y=0, expected_color=(0, 0, 0), tolerance=0, sample=None):
     # note: to convert from tolerances used in the old system (summing the difference in all of the channels) to a tolerance in this system (assuming the differences are spread evenly across channels), you can simply divide by √3
 
-    pixel = pg.pixel(x, y) if sample == None else sample
+    pixel = pyautogui.pixel(x, y) if sample == None else sample
 
     pixel_length = len(pixel)
     expected_color_length = len(expected_color)
@@ -237,25 +239,25 @@ def check_chica():
     is_robot_at_door = False
 
 def move_mouse(coords):
-    pg.moveTo(
-        coords[0] * pg.size()[0],
-        coords[1] * pg.size()[1]
+    pyautogui.moveTo(
+        coords[0] * pyautogui.size()[0],
+        coords[1] * pyautogui.size()[1]
     )
 
 def click_mouse():
-    pg.mouseDown()
+    pyautogui.mouseDown()
     time.sleep(0.02)
-    pg.mouseUp()
+    pyautogui.mouseUp()
     time.sleep(0.02)
 
 def get_position():
-    position = pg.position()
-    width, height = pg.size()
+    position = pyautogui.position()
+    width, height = pyautogui.size()
     return (position.x / width, position.y / height)
 
-def get_pixel(coords, sc):
-    width, height = sc.size
-    return sc.getpixel((int(scan_coordinates[coords][0] * width), int(scan_coordinates[coords][1] * height)))
+def get_pixel(coords, screenshot):
+    width, height = screenshot.size
+    return screenshot.getpixel((int(scan_coordinates[coords][0] * width), int(scan_coordinates[coords][1] * height)))
 
 def get_stars():
     for _ in range(10):
@@ -353,7 +355,7 @@ def update_states():
         screenshot = None
 
         try:
-            screenshot = pg.screenshot()
+            screenshot = pyautogui.screenshot()
         except:
             pass
 
@@ -418,15 +420,21 @@ def update_states():
         time.sleep(0.05)
 
 if __name__ == "__main__":
-    print("Program started! Waiting for game to open...")
+    def on_press(key):
+        if key == pynput.keyboard.Key.esc:
+            os._exit(0)
 
-    # Wait for the game to open before starting anything
     def is_running(name):
         for i in psutil.process_iter(["name"]):
             if i.info["name"] == name:
                 return True
         return False
+    
+    pynput.keyboard.Listener(on_press=on_press).join()
+    
+    print("Program started! Waiting for game to open...")
 
+    # Wait for the game to open before starting anything
     while True:
         time.sleep(2)
         if is_running("FiveNightsatFreddys.exe"):
@@ -434,7 +442,7 @@ if __name__ == "__main__":
 
     # Wait 5 seconds to make sure the game is open in fullscreen
     time.sleep(5)
-    move_mouse((0.6, 0.6))
+    # move_mouse((0.6, 0.6))
 
     game_loop_thread = threading.Thread(target=game_loop)
     update_states_thread = threading.Thread(target=update_states)
