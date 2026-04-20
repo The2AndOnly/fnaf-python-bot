@@ -1,12 +1,12 @@
 [project]
 name = "fnaf-python-bot"
-version = "1.0.0"
-description = "Beats FNAF"
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
-    keyboard>=0.13.5
-    mouse>=0.7.1
-    mss>=10.0.0
-    psutil>=7.2.2
+    "keyboard>=0.13.5",
+    "mouse>=0.7.1",
+    "mss>=10.1.0",
+    "psutil>=7.2.2",
 ]
