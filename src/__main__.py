@@ -5,7 +5,7 @@ import time
 import keyboard
 import psutil
 
-from src.game import game_loop, update_states
+from src.game import terminate_on_error, game_loop, update_states
 
 def is_running(name):
     for i in psutil.process_iter(["name"]):
@@ -26,7 +26,7 @@ while True:
 # Wait 5 seconds to make sure the game is open in fullscreen
 time.sleep(5)
 
-game_loop_thread = threading.Thread(target=game_loop)
-update_states_thread = threading.Thread(target=update_states)
+game_loop_thread = threading.Thread(target=terminate_on_error, args=(game_loop,))
+update_states_thread = threading.Thread(target=terminate_on_error, args=(update_states,))
 game_loop_thread.start()
 update_states_thread.start()

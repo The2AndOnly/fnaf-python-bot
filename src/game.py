@@ -20,6 +20,10 @@ is_right_door_closed = False
 is_robot_at_door = False
 last_foxy_check = 0
 
+def terminate():
+    sct.close()
+    os._exit()
+
 def do_colors_match(color_1=(0, 0, 0), color_2=(0, 0, 0), tolerance=0, channels=3):
     # note: to convert from tolerances used in the old system (summing the difference in all of the channels) to a tolerance in this system (assuming the differences are spread evenly across channels), you can simply divide by √channels
     return sum([(color_1[i] - color_2[i]) ** 2 for i in range(channels)]) < tolerance ** 2
@@ -236,8 +240,7 @@ def game_loop():
             stars = get_stars()
 
             if stars == 3:
-                sct.close()
-                os._exit(1)
+                terminate()
             
             move_mouse(button_coordinates[["continue", "sixth_night", "custom_night"][stars]])
             
@@ -334,3 +337,9 @@ def update_states():
             pass
 
         time.sleep(0.05)
+
+def terminate_on_error(function):
+    try:
+        function()
+    except:
+        terminate()
