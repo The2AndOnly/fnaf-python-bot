@@ -14,13 +14,19 @@ First, make sure you have Python with pip installed: https://www.python.org/down
 
 Then, download this repo (or just beatfnaf1.py and requirements.txt).
 
-Next, install the dependencies:
+Finally, run the program (it is recommended to use uv to handle all of the dependencies):
+
+```bash
+uv run python src/
+```
+
+If you don't want to use uv, you can first install the dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Finally, run the program:
+And then run the program:
 
 ```bash
 python src/
@@ -30,4 +36,4 @@ Now just open FiveNightsatFreddys.exe, and after a while the script should start
 
 To quit the program: Pressing `esc` will close the game and terminate the script.
 
-The program will quit automatically if 3 stars are detected on the menu.
+The program will also quit automatically if 3 stars are detected on the menu.
